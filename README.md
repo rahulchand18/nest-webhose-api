@@ -8,6 +8,18 @@ A webz api client implementation using [Nest](https://github.com/nestjs/nest) fr
 $ npm install
 ```
 
+## Configure Database
+
+```bash
+$ docker compose up --build -d
+```
+
+## Run the SQL migration
+
+```bash
+$ npx prisma migrate dev --name init
+```
+
 ## Compile and run the project
 
 ```bash
@@ -27,3 +39,4 @@ $ npm run start:prod
 # unit tests
 $ npm run test
 
+```
