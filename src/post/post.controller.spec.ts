@@ -3,27 +3,27 @@ import { PostController } from './post.controller';
 import { PostService } from './post.service';
 
 describe('PostController', () => {
-  let controller: PostController;
+    let controller: PostController;
 
-  const mockPostService = {
-    getPosts: jest.fn().mockResolvedValue([]),
-  };
+    const mockPostService = {
+        getPosts: jest.fn().mockResolvedValue([])
+    };
 
-  beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
-      controllers: [PostController],
-      providers: [
-        {
-          provide: PostService,
-          useValue: mockPostService,
-        },
-      ],
-    }).compile();
+    beforeEach(async () => {
+        const module: TestingModule = await Test.createTestingModule({
+            controllers: [PostController],
+            providers: [
+                {
+                    provide: PostService,
+                    useValue: mockPostService
+                }
+            ]
+        }).compile();
 
-    controller = module.get<PostController>(PostController);
-  });
+        controller = module.get<PostController>(PostController);
+    });
 
-  it('should be defined', () => {
-    expect(controller).toBeDefined();
-  });
+    it('should be defined', () => {
+        expect(controller).toBeDefined();
+    });
 });
