@@ -23,7 +23,7 @@ export class PostController {
   async getPosts() {
     try {
       const posts = await this.postService.getPosts();
-      return posts;
+      return { success: true, data: posts };
     } catch (error) {
       return error
 

@@ -35,6 +35,8 @@ export class PostService {
 
   async fetchAndSavePosts(searchTerm: string): Promise<boolean> {
     try {
+      let moreResultsAvailable = true;
+
       const response = await axios.get(this.API_URL, {
         params: {
           token: this.API_KEY,
@@ -42,22 +44,13 @@ export class PostService {
           format: 'json',
         },
       });
+
       const posts = response.data.posts;
-      for (const post of posts) {
-        const {
-          id,
-          uuid,
-          url,
-          siteFull,
-          site,
-          siteSection,
-          title,
-          author,
-          language,
-          text,
-          country,
-          mainImage,
-        } = post;
+
+      moreResultsAvailable = response.data.moreResultsAvailable;
+
+      for (const post of posts.slice(0, 200)) {
+        const { id, uuid, url, siteFull, site, siteSection, title, author, language, text, country, mainImage } = post;
         const updatedPost = {
           id,
           uuid,
@@ -71,22 +64,24 @@ export class PostService {
           text,
           country,
           mainImage,
-        }
+        };
 
         await this.prisma.post.upsert({
           where: { uuid: post.uuid },
           update: {},
-          create: {
-            ...updatedPost,
-          },
+          create: updatedPost,
         });
       }
-      return true
+
+      console.log(`${moreResultsAvailable ? 'More available' : ''}`)
+
+      return true;
     } catch (error) {
-      console.error('Error fetching or saving posts: ');
+      console.error('Error fetching or saving posts: ', error);
       return false;
     }
   }
+
 
 
   async getPosts() {
