@@ -4,7 +4,7 @@ import axios from 'axios';
 import { Post } from '@prisma/client';
 @Injectable()
 export class PostService {
-    private readonly API_URL = `${process.env.API_URL}/filterWebContent`;
+    private readonly API_URL = `${process.env.API_URL}`;
     private readonly API_KEY = process.env.API_KEY;
     private prisma: PrismaClient;
     constructor() {
@@ -29,19 +29,9 @@ export class PostService {
         });
     }
 
-    async handler(queryString: string): Promise<any> {
-        if (!queryString) {
-            throw new Error('queryString is required');
-        }
-
+    async getResponseFromAPI(url: string): Promise<any> {
         try {
-            const response = await axios.get(this.API_URL, {
-                params: {
-                    token: this.API_KEY,
-                    q: encodeURIComponent(queryString),
-                    format: 'json'
-                }
-            });
+            const response = await axios.get(url);
 
             return response.data;
         } catch (error) {
@@ -53,13 +43,23 @@ export class PostService {
     async fetchAndSavePosts(searchTerm: string): Promise<boolean> {
         try {
             let moreResultsAvailable = true;
+            let url = `${this.API_URL}/filterWebContent?token=${this.API_KEY}&format=json&q=${searchTerm}`;
+            let allPosts = [];
+            do {
+                const response = await this.getResponseFromAPI(url);
+                const posts = response.posts;
+                posts.forEach((post: any) => {
+                    if (post.uuid) {
+                        allPosts.push(post);
+                    }
+                });
+                moreResultsAvailable = response.moreResultsAvailable;
+                if (moreResultsAvailable) {
+                    url = `${this.API_URL}${response.next}`;
+                }
+            } while (moreResultsAvailable && allPosts.length <= 200);
 
-            const response = await this.handler(searchTerm);
-            const posts = response.posts;
-
-            moreResultsAvailable = response.moreResultsAvailable;
-
-            for (const post of posts.slice(0, 200)) {
+            for (const post of allPosts.slice(0, 200)) {
                 const {
                     id,
                     uuid,
@@ -75,6 +75,7 @@ export class PostService {
                     mainImage
                 } = post;
                 const updatedPost = {
+                    query: searchTerm,
                     id,
                     uuid,
                     url,
@@ -106,6 +107,15 @@ export class PostService {
     }
 
     async getPosts() {
-        return this.prisma.post.findMany();
+        const total = await this.prisma.post.count();
+        const posts = await this.prisma.post.findMany({
+            select: {
+                id: true,
+                uuid: true,
+                url: true,
+                query: true
+            }
+        });
+        return { posts, total };
     }
 }
