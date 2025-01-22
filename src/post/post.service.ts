@@ -29,21 +29,35 @@ export class PostService {
         });
     }
 
-    async fetchAndSavePosts(searchTerm: string): Promise<boolean> {
-        try {
-            let moreResultsAvailable = true;
+    async handler(queryString: string): Promise<any> {
+        if (!queryString) {
+            throw new Error('queryString is required');
+        }
 
+        try {
             const response = await axios.get(this.API_URL, {
                 params: {
                     token: this.API_KEY,
-                    q: searchTerm,
+                    q: encodeURIComponent(queryString),
                     format: 'json'
                 }
             });
 
-            const posts = response.data.posts;
+            return response.data;
+        } catch (error) {
+            console.error('Error fetching posts from Webhose.io:', error);
+            throw new Error('Error fetching posts from Webhose.io');
+        }
+    }
 
-            moreResultsAvailable = response.data.moreResultsAvailable;
+    async fetchAndSavePosts(searchTerm: string): Promise<boolean> {
+        try {
+            let moreResultsAvailable = true;
+
+            const response = await this.handler(searchTerm);
+            const posts = response.posts;
+
+            moreResultsAvailable = response.moreResultsAvailable;
 
             for (const post of posts.slice(0, 200)) {
                 const {
